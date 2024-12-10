@@ -82,6 +82,8 @@ import sklearn.metrics
 # pytorch
 import torch
 import torch.nn as nn
+import zentorch
+
 
 # dataloader
 try:
@@ -788,14 +790,15 @@ def inference(
             continue
 
         # forward pass
-        Z_test = dlrm_wrap(
-            X_test,
-            lS_o_test,
-            lS_i_test,
-            use_gpu,
-            device,
-            ndevices=ndevices,
-        )
+        with torch.no_grad():
+            Z_test = dlrm_wrap(
+                X_test,
+                lS_o_test,
+                lS_i_test,
+                use_gpu,
+                device,
+                ndevices=ndevices,
+            )
         ### gather the distributed results on each rank ###
         # For some reason it requires explicit sync before all_gather call if
         # tensor is on GPU memory
@@ -1303,7 +1306,7 @@ def run():
         weighted_pooling=args.weighted_pooling,
         loss_function=args.loss_function,
     )
-
+    dlrm = torch.compile(dlrm, backend='zentorch')
     # test prints
     if args.debug_mode:
         print("initial parameters (weights and bias):")
